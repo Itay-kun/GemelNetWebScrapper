@@ -1,9 +1,15 @@
+doc_id =
+  'AKfycbwnjeuB8mQKLXm9opklyTUhHssD7LKf75MAB8TsK63TxM4CAI4m89nMYih4qB_vd54_rQ';
+
 function buildGemelnetURL(id) {
-  link = 'https://gemelnet.cma.gov.il/views/perutHodshi.aspx?idGuf=' + id.toString() + '&OCHLUSIYA=1';
+  link =
+    'https://gemelnet.cma.gov.il/views/perutHodshi.aspx?idGuf=' +
+    id.toString() +
+    '&OCHLUSIYA=1';
   return link;
 }
 /****************************************************************************************/
-function buildGoogleURL(doc_id = 'AKfycbwnjeuB8mQKLXm9opklyTUhHssD7LKf75MAB8TsK63TxM4CAI4m89nMYih4qB_vd54_rQ') {
+function buildGoogleURL(doc_id) {
   google_url = 'https://script.google.com/macros/s/' + doc_id + '/exec';
   return google_url;
 }
@@ -233,7 +239,7 @@ function add_concerne_array_to_combined_table(test_table = combineTables2()) {
 function send_combined_table_to_sheets() {
   sendToSheets(
     idGuf,
-    table_to_text(add_cashflow_array_to_combined_table(add_concerne_array_to_combined_table())),
+    table_to_text(makeFinalTable()),//table_to_text(add_cashflow_array_to_combined_table(add_concerne_array_to_combined_table())),
     'All'
   );
   //copy(table_to_text(add_concerne_array_to_combined_table()))
@@ -334,17 +340,31 @@ const maxLength = Math.max(...arrays.map((arr) => arr.length));
       if (isNaN(parseFloat(element))) {
         strings.push(element);
       } else if (!isNaN(element)) {
+        console.log(element);
         elements.push(parseFloat(element));
       }
     }
     const sum = elements.reduce((acc, curr) => acc + curr, 0);
     if (strings.length > 0) {
       result.push(
-        sum.toFixed(2) + " + " + strings.join(" + ")
+        /*sum.toFixed(2) + " + " + */strings.join(" + ")
       );
     } else {
       result.push(sum.toFixed(2));
     }
   }
   return result;
+}
+
+function makeFinalTable(){
+titles = ["נכסים אחרים","הלוואות","קרנות נאמנות"]
+combined_table = combineTables2()
+
+arrays = getRowsByHeaders(combined_table, titles)
+sum_array = sumArraysByElements2(arrays)
+new_table = removeRowsByHeaders(combined_table, titles)
+new_table.splice(3, 0, sum_array);
+final_table = add_concerne_array_to_combined_table(new_table)
+final_table = add_cashflow_array_to_combined_table(final_table)
+return final_table
 }
