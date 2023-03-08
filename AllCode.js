@@ -1,12 +1,9 @@
-doc_id =
-  'AKfycbwnjeuB8mQKLXm9opklyTUhHssD7LKf75MAB8TsK63TxM4CAI4m89nMYih4qB_vd54_rQ';
-
 function buildGemelnetURL(id) {
   link = 'https://gemelnet.cma.gov.il/views/perutHodshi.aspx?idGuf=' + id.toString() + '&OCHLUSIYA=1';
   return link;
 }
 /****************************************************************************************/
-function buildGoogleURL(doc_id) {
+function buildGoogleURL(doc_id = 'AKfycbwnjeuB8mQKLXm9opklyTUhHssD7LKf75MAB8TsK63TxM4CAI4m89nMYih4qB_vd54_rQ') {
   google_url = 'https://script.google.com/macros/s/' + doc_id + '/exec';
   return google_url;
 }
