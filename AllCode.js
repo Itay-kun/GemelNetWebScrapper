@@ -8,6 +8,7 @@ function buildGemelnetURL(id) {
     '&OCHLUSIYA=1';
   return link;
 }
+
 /****************************************************************************************/
 function buildGoogleURL(doc_id) {
   google_url = 'https://script.google.com/macros/s/' + doc_id + '/exec';
@@ -57,7 +58,6 @@ function getTables(page = window) {
     ) {
       let current_table_text = table_to_text(current_table);
       tables_set.add(current_table_text.replaceAll('\\"', '"'));
-      console.log(current_table.length);
     }
   }
   tables_array = Array.from(tables_set);
@@ -86,8 +86,8 @@ function getTablesWithText(page = window, text_to_find) {
   return tables_array;
 }
 /****************************************************************************************/
-function table_to_text(table) {
-  table_text = table.map(colmns => colmns.join('\t')).join('\n');
+function table_to_text(source_table) {
+  table_text = source_table.map(colmns => colmns.join('\t')).join('\n');
   //table_text = table_text.replaceAll('"','\"')
   return table_text;
 }
@@ -99,15 +99,6 @@ function table_from_table_text(table_text) {
   return cols;
 }
 /****************************************************************************************/
-function get_categories_table() {
-  t1 = table_from_table_text(tables_array[0]);
-  t1_title = t1.splice(0, 4).join(' ');
-  t1.splice(1, 1);
-  t1.splice(11, 4);
-  t1.splice(11, 4);
-  return t1;
-}
-/****************************************************************************************/
 function exctract_percents_tables(index = 'all', page = window) {
   page_tables =
     page.document.all.VisibleReportContentReportViewer1_ctl10.getElementsByTagName(
@@ -115,37 +106,23 @@ function exctract_percents_tables(index = 'all', page = window) {
     );
   a = getTablesWithText(window, 'אחוזים').filter(t => !t.match('פקס')); //.map(a=>a[0].split(/'סה"כ'/))
   ct = a[0].split('סה"כ');
-  // console.log(ct.split(/'סה"כ'/))
-  /*
-a.splice(1,6)
-a[0].splice(2,2)
-a[0].splice(0,1)
-*/
-  categories_table = ct[0]
+  categories_table = ct[0].trim()
     .replace(/\n+באחוזים/, ' באחוזים')
-    //.replace(/(,\s)/, "'')
     .replace(/\t\t\n\n/, '')
-    .trim();
+    
   delta_table = a[1]
     .replace(/\n+באחוזים/, ' באחוזים')
-    .replace(', ', ' במונחי דלתא');
+    .replace(', ','')
+    .replace("למניות","למניות במונחי דלתא");
 
   switch (index) {
     case 0:
-    case 'categories':
-      {
-        t = categories_table;
-      }
+    case 'categories':      {        t = categories_table      }
       break;
     case 1:
-    case 'delta':
-      {
-        t = delta_table;
-      }
+    case 'delta':      {        t = delta_table      }
       break;
-    default: {
-      t = getCombinedTables2();
-    }
+    default: {      t = getCombinedTables2()    }
   }
   //copy(t)
   return t.toString();
@@ -199,9 +176,6 @@ function transpose(matrix) {
     }
   }
 
-  console.log('Hight: ' + grid.length);
-  console.log('Width: ' + grid[0].length);
-
   return grid;
 }
 
@@ -245,9 +219,9 @@ function send_combined_table_to_sheets() {
   //copy(table_to_text(add_concerne_array_to_combined_table()))
 }
 
-function getRowByHeader(table, header) {
-  let columns = table[0].length - 1;
-  return table.filter(row => row[columns].match(header));
+function getRowByHeader(source_table, header) {
+  let columns = source_table[0].length - 1;
+  return source_table.filter(row => row[columns].match(header));
 }
 
 function removeColumnByHeader(arr, header = '') {
@@ -309,16 +283,16 @@ function add_cashflow_array_to_combined_table(test_table = combineTables2()) {
 }
 
 //ToDo: Use this instead of the function that removes one if possible
-function removeRowsByHeaders(table, titles=[]) {
-  let columns = table[0].length - 1;
-  return table.filter(row => !row[columns].match(convertToRegex(titles)))
+function removeRowsByHeaders(source_table, titles=[]) {
+  let columns = source_table[0].length - 1;
+  return source_table.filter(row => !row[columns].match(convertToRegex(titles)))
 }
 
 
 //ToDo: Use this instead of the function that gets one if possible
-function getRowsByHeaders(table, titles=[]) {
-  let columns = table[0].length - 1;
-  return table.filter(row => !!row[columns].match(convertToRegex(titles)))
+function getRowsByHeaders(source_table, titles=[]) {
+  let columns = source_table[0].length - 1;
+  return source_table.filter(row => !!row[columns].match(convertToRegex(titles)))
 }
 
 function convertToRegex(strings=[]){
@@ -340,14 +314,13 @@ const maxLength = Math.max(...arrays.map((arr) => arr.length));
       if (isNaN(parseFloat(element))) {
         strings.push(element);
       } else if (!isNaN(element)) {
-        console.log(element);
         elements.push(parseFloat(element));
       }
     }
     const sum = elements.reduce((acc, curr) => acc + curr, 0);
     if (strings.length > 0) {
       result.push(
-        /*sum.toFixed(2) + " + " + */strings.join(" + ")
+        strings.join(", ")
       );
     } else {
       result.push(sum.toFixed(2));
@@ -367,4 +340,27 @@ new_table.splice(3, 0, sum_array);
 final_table = add_concerne_array_to_combined_table(new_table)
 final_table = add_cashflow_array_to_combined_table(final_table)
 return final_table
+}
+
+/****************************************************************************************************/
+
+function buildGemelnetDataURL(resource_id="a30dcbea-a1d2-482c-ae29-8f781f5025fb",guf_id=getID()){
+    return("https://data.gov.il/api/3/action/datastore_search?resource_id="+resource_id+"&q="+guf_id)
+}
+
+function fetchGemelnetDataURL(){
+fetch(buildGemelnetDataURL())
+  .then((response) => response.json())
+  .then((data) => (records = data.result.records));
+    return(records)
+}
+
+function getAnualYields(){
+    data = fetchGemelnetDataURL()
+    yields = []
+    yields.push(data[0]["YEAR_TO_DATE_YIELD"]);
+    yields.push(data[0]['AVG_ANNUAL_YIELD_TRAILING_3YRS']);
+    yields.push(data[0]['AVG_ANNUAL_YIELD_TRAILING_5YRS']);
+            
+    return(yields)
 }
