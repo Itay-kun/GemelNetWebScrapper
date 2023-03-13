@@ -9,6 +9,16 @@ function buildGemelnetURL(id) {
   return link;
 }
 
+function buildGemelnetDataURL(resource_id="a30dcbea-a1d2-482c-ae29-8f781f5025fb",guf_id=getID()){
+    return("https://data.gov.il/api/3/action/datastore_search?resource_id="+resource_id+"&q="+guf_id)
+}
+
+function fetchGemelnetDataURL(){
+fetch(buildGemelnetDataURL())
+  .then((response) => response.json())
+  .then((data) => (records = data.result.records));
+    return(records)
+}
 /****************************************************************************************/
 function buildGoogleURL(doc_id) {
   google_url = 'https://script.google.com/macros/s/' + doc_id + '/exec';
@@ -283,7 +293,9 @@ function add_cashflow_array_to_combined_table(test_table = combineTables2()) {
 }
 
 //ToDo: Use this instead of the function that removes one if possible
-function removeRowsByHeaders(source_table, titles=[]) {
+function removeRowsByHeaders(source_table, relevent_titles=[]) {
+  titles=[]
+  if(typeof(relevent_titles)=="string") {titles.push(relevent_titles)} else {titles = relevent_titles}
   let columns = source_table[0].length - 1;
   return source_table.filter(row => !row[columns].match(convertToRegex(titles)))
 }
@@ -339,20 +351,7 @@ new_table = removeRowsByHeaders(combined_table, titles)
 new_table.splice(3, 0, sum_array);
 final_table = add_concerne_array_to_combined_table(new_table)
 final_table = add_cashflow_array_to_combined_table(final_table)
-return final_table
-}
-
-/****************************************************************************************************/
-
-function buildGemelnetDataURL(resource_id="a30dcbea-a1d2-482c-ae29-8f781f5025fb",guf_id=getID()){
-    return("https://data.gov.il/api/3/action/datastore_search?resource_id="+resource_id+"&q="+guf_id)
-}
-
-function fetchGemelnetDataURL(){
-fetch(buildGemelnetDataURL())
-  .then((response) => response.json())
-  .then((data) => (records = data.result.records));
-    return(records)
+return removeRowsByHeaders(final_table,["מניות, אופציות ותעודות סל מנייתיות"])
 }
 
 function getAnualYields(){
@@ -363,4 +362,9 @@ function getAnualYields(){
     yields.push(data[0]['AVG_ANNUAL_YIELD_TRAILING_5YRS']);
             
     return(yields)
+}
+
+function selectYear(year=2023){
+  document.getElementById("ddlbShana").value = year
+  document.querySelector("#cbDisplay").click()
 }
