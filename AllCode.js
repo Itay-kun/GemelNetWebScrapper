@@ -4,6 +4,7 @@ doc_id =
 year = document.getElementById("ddlbShana").value
 
 if(year!=2023) {selectYear(2023)}
+if(typeof(yields)=='undefined'){try{getAnualYields()}catch{false}}
 
 month = window.theForm.elements['maxTkufa'].value
 
