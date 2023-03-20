@@ -364,7 +364,7 @@ function selectYear(year=window.theForm.elements['maxTkufaYYYY'].value){
 
 function getLastMonth(){
     let last_month_id = parseInt(window.theForm.elements['maxTkufa'].value.replace(window.theForm.elements['maxTkufaYYYY'].value,""));
-    let temp_table = transpose(getCombinedTables()).reverse()
+    let temp_table = transpose(add_concerne_array_to_combined_table(add_cashflow_array_to_combined_table(getCombinedTables()))).reverse()
     return [temp_table[0],temp_table[last_month_id]]
 }
 
