@@ -1,6 +1,12 @@
 doc_id =
   'AKfycbwnjeuB8mQKLXm9opklyTUhHssD7LKf75MAB8TsK63TxM4CAI4m89nMYih4qB_vd54_rQ';
 
+year = document.getElementById("ddlbShana").value
+
+if(year!=2023) {selectYear(2023)}
+
+month = window.theForm.elements['maxTkufa'].value
+
 function buildGemelnetURL(id) {
   link =
     'https://gemelnet.cma.gov.il/views/perutHodshi.aspx?idGuf=' +
@@ -13,12 +19,6 @@ function buildGemelnetDataURL(resource_id="a30dcbea-a1d2-482c-ae29-8f781f5025fb"
     return("https://data.gov.il/api/3/action/datastore_search?resource_id="+resource_id+"&q="+guf_id)
 }
 
-function fetchGemelnetDataURL(){
-fetch(buildGemelnetDataURL())
-  .then((response) => response.json())
-  .then((data) => (records = data.result.records));
-    return(records)
-}
 /****************************************************************************************/
 function buildGoogleURL(doc_id) {
   google_url = 'https://script.google.com/macros/s/' + doc_id + '/exec';
@@ -164,7 +164,7 @@ function sendToSheets(idGuf, table_text, dest = 'categories') {
   base_url = buildGoogleURL(doc_id);
   //url = base_url+'?idGuf='+idGuf+"&table="+encodeURI(table_text)
   url = encodeURI(
-    base_url + '?idGuf=' + dest + '_' + idGuf + '&table=' + table_text
+    base_url + '?idGuf=' + dest + '_' + idGuf + '_' + month + '&table=' + table_text
   );
   console.log(url.replace('exec', 'dev'));
   fetch(url, {
@@ -223,7 +223,7 @@ function add_concerne_array_to_combined_table(test_table = combineTables2()) {
 function send_combined_table_to_sheets() {
   sendToSheets(
     idGuf,
-    table_to_text(makeFinalTable()),//table_to_text(add_cashflow_array_to_combined_table(add_concerne_array_to_combined_table())),
+    table_to_text(getLastMonthAndYields()),//table_to_text(add_cashflow_array_to_combined_table(add_concerne_array_to_combined_table())),
     'All'
   );
   //copy(table_to_text(add_concerne_array_to_combined_table()))
@@ -354,17 +354,43 @@ final_table = add_cashflow_array_to_combined_table(final_table)
 return removeRowsByHeaders(final_table,["מניות, אופציות ותעודות סל מנייתיות"])
 }
 
-function getAnualYields(){
-    data = fetchGemelnetDataURL()
-    yields = []
-    yields.push(data[0]["YEAR_TO_DATE_YIELD"]);
-    yields.push(data[0]['AVG_ANNUAL_YIELD_TRAILING_3YRS']);
-    yields.push(data[0]['AVG_ANNUAL_YIELD_TRAILING_5YRS']);
-            
-    return(yields)
+
+function selectYear(year=window.theForm.elements['maxTkufaYYYY'].value){
+    document.getElementById("ddlbShana").value = year
+    console.log(year)
+    let button = document.querySelector("#cbDisplay")
+    button.click()
 }
 
-function selectYear(year=2023){
-  document.getElementById("ddlbShana").value = year
-  document.querySelector("#cbDisplay").click()
+function getLastMonth(){
+    let last_month_id = parseInt(window.theForm.elements['maxTkufa'].value.replace(window.theForm.elements['maxTkufaYYYY'].value,""));
+    let temp_table = transpose(getCombinedTables()).reverse()
+    return [temp_table[0],temp_table[last_month_id]]
+}
+
+function fetchGemelnetDataURL(){
+fetch(buildGemelnetDataURL())
+  .then((response) => response.json())
+  .then((data) => (records = data.result.records));
+    return(records)
+}
+
+function getAnualYields(){
+    try{data = fetchGemelnetDataURL()} catch {data = data = fetchGemelnetDataURL()}
+    yields = []
+    yields.push(["תשואות שנה אחרונה",data[0]["YEAR_TO_DATE_YIELD"]]);
+    yields.push(["תשואות 3 שנים אחרונות",data[0]['AVG_ANNUAL_YIELD_TRAILING_3YRS']]);
+    yields.push(["תשואות 5 שנים אחרונות",data[0]['AVG_ANNUAL_YIELD_TRAILING_5YRS']]);
+            
+    return(yields.reverse())
+}
+
+function getLastMonthAndYields(){
+let monthAndYields = [[getLastMonth()[0],transpose(getAnualYields().reverse())[0]].flat(),[getLastMonth()[1],transpose(getAnualYields().reverse())[1]].flat()]
+monthAndYields = transpose(monthAndYields)
+monthAndYields = monthAndYields.map(row => row.reverse())
+// let reversed = monthAndYields.reverse()
+// let transposed = transpose(transpose(reversed).reverse()).reverse()
+
+return monthAndYields
 }
